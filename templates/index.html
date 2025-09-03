@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">园区列表</h2>
+
+{% for category in categories %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h3 class="h5 mb-2">
+                <a href="{{ url_for('category_view', category=category) }}" class="text-decoration-none">
+                    <i class="fas fa-building me-2"></i>{{ category }}
+                </a>
+            </h3>
+            {% if category in selections %}
+                <p class="mb-0 text-success">
+                    <i class="fas fa-check-circle me-1"></i>已选择: {{ selections[category] }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}
+
+{% if total_pages > 1 %}
+    <nav aria-label="页面导航" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <ul class="pagination mb-0">
+                {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=1) }}">
+                            <i class="fas fa-angle-double-left"></i>首页
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=page-1) }}">
+                            <i class="fas fa-angle-left"></i>上一页
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% set start_page = page - 2 if (page - 2) > 0 else 1 %}
+                {% set end_page = page + 2 if (page + 2) <= total_pages else total_pages %}
+
+                {% for p in range(start_page, end_page + 1) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=p) }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+                
+                {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=page+1) }}">
+                            <i class="fas fa-angle-right"></i>下一页
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('index', page=total_pages) }}">
+                            <i class="fas fa-angle-double-right"></i>末页
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+
+            <div class="d-flex align-items-center">
+                <form action="{{ url_for('index') }}" method="get" class="d-flex align-items-center">
+                    <input type="number" 
+                           name="page" 
+                           min="1" 
+                           max="{{ total_pages }}" 
+                           value="{{ page }}" 
+                           class="form-control form-control-sm me-2" 
+                           style="width: 70px;">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>跳转
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+{% endif %}
+{% endblock %}
