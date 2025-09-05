@@ -2,6 +2,8 @@ import os
 import json
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session
 from werkzeug.utils import secure_filename
+import pandas as pd
+from datetime import datetime
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
@@ -53,6 +55,7 @@ def get_category_images(category):
                     'image_path': rel_path,
                     'has_image': True
                 })
+            '''
             else:
                 # 没有图片
                 images.append({
@@ -60,8 +63,9 @@ def get_category_images(category):
                     'image_path': None,
                     'has_image': False
                 })
+            '''
     
-    return sorted(images, key=lambda x: x['folder'])
+    return images
 
 @app.route('/')
 def index():
@@ -136,6 +140,48 @@ def unselect_image():
         save_selections(selections)
     
     return redirect(url_for('category_view', category=category))
+
+@app.route('/export-excel')
+def export_excel():
+    """导出选择结果到Excel"""
+    selections = get_selections()
+    data = []
+    for category, image_path in selections.items():
+        with open(os.path.join(app.config['IMG_DIR'], image_path).replace('.png', '.txt'), 'r') as f_r:
+            profile_geo = f_r.read().strip()
+        data.append({
+            '名称': category,
+            '搜索结果': image_path.split('/')[1].split('.')[1],
+            'profile_geo': profile_geo
+        })
+    df_res = pd.DataFrame(data)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    excel_filename = f'selections_{timestamp}.xlsx'
+    excel_path = os.path.join(app.config['DATA_DIR'], excel_filename)
+    df_res.to_excel(excel_path, index=False)
+    
+    # 返回到页面
+    categories = get_categories()
+    page = request.args.get('page', type=int)
+    if page is None:
+        page = session.get('last_page', 1)
+    per_page = 10
+    total = len(categories)
+    total_pages = (total + per_page - 1) // per_page
+    page = max(1, min(page, total_pages))
+    session['last_page'] = page
+
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_categories = categories[start:end]
+
+    return render_template('index.html', 
+                          categories=paginated_categories,
+                          selections=selections,
+                          page=page,
+                          per_page=per_page,
+                          total=total,
+                          total_pages=total_pages)
 
 @app.route('/img/<path:filename>')
 def serve_image(filename):

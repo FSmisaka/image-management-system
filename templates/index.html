@@ -2,6 +2,11 @@
 
 {% block content %}
 <h2 class="mb-4">园区列表</h2>
+<div class="mb-3">
+    <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+        导出选择结果到Excel
+    </a>
+</div>
 
 {% for category in categories %}
     <div class="card mb-3">
